@@ -1,0 +1,75 @@
+import sys
+import time
+import datetime
+import struct
+from scapy.all import IP, ICMP, send
+
+def formatear_timestamp(timestamp):
+    """
+    Formatea el timestamp en el formato deseado.
+    """
+    return datetime.datetime.utcfromtimestamp(timestamp).strftime('%b %d, %Y %H:%M:%S.%f')[:-3] + ' UTC'
+
+def enviar_caracter_icmp(caracter, ip_destino, id_paquete, secuencia_paquete):
+    """
+    Función que envía un carácter en un paquete ICMP request individual.
+    :param caracter: str, el carácter a enviar
+    :param ip_destino: str, la dirección IP destino
+    :param id_paquete: int, el identificador del paquete
+    :param secuencia_paquete: int, el número de secuencia del paquete
+    """
+    # Generar timestamp actual
+    timestamp = int(time.time())
+
+    # Formatear timestamp
+    timestamp_str = formatear_timestamp(timestamp)
+
+    # Guardar el caracter oculto
+    caracter_oculto = caracter
+
+    #Datos hex luego del caracter escondido
+    datos_hex = "00000000000000101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f3031323334353637"
+    
+    # Crear datos ICMP con el primer caracter oculto del texto de entrada y el contador del 1 al 37 en hexadecimal
+    datos_icmp = bytes([ord(caracter_oculto)]) + bytes.fromhex(datos_hex)
+    
+    # Crear el paquete ICMP echo request con timestamp y datos
+    paquete_icmp = IP(src="127.0.0.1", dst=ip_destino, id=id_paquete, ttl=64) / ICMP(type=8, code=0, id=id_paquete, seq=secuencia_paquete)/ datos_icmp
+
+    # Enviar paquete
+    send(paquete_icmp, verbose=False)
+
+    # Mostrar caracter enviado y timestamp
+    print(f"Enviado: {caracter_oculto} - Timestamp: {timestamp_str}")
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Uso: python3 enviar_caracteres_icmp.py <texto>")
+        sys.exit(1)
+
+    # Obtener el texto a enviar desde los argumentos de línea de comandos
+    texto = sys.argv[1]
+
+    # Dirección IP destino (loopback)
+    ip_destino = "127.0.0.1"
+
+    # Iniciar el ID de paquete en 1
+    id_paquete = 1
+
+    # Iniciar el número de secuencia en 1
+    secuencia_paquete = 1
+
+    # Enviar cada carácter del texto
+    for caracter in texto:
+        # Enviar el carácter ICMP
+        enviar_caracter_icmp(caracter, ip_destino, id_paquete, secuencia_paquete)
+        
+        # Incrementar el ID de paquete
+        id_paquete += 1
+        
+        # Incrementar el número de secuencia
+        secuencia_paquete += 1
+        
+        # Esperar 1 segundo antes de enviar el siguiente carácter
+        #time.sleep(1)
