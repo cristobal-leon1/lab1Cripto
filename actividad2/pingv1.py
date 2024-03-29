@@ -77,6 +77,3 @@ if __name__ == "__main__":
 
         # Incrementar el número de secuencia
         secuencia_paquete += 1
-
-        # Esperar 1 segundo antes de enviar el siguiente carácter
-        time.sleep(1)
